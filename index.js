@@ -2,7 +2,7 @@
 
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000
 
@@ -21,13 +21,25 @@ async function run() {
 
     try {
         const categoriesCollection = client.db("furnitureMart").collection("category");
+        const categoriesItemCollection = client.db("furnitureMart").collection("categories");
 
         // categories api 
         app.get('/categories', async (req, res) => {
             const query = {};
-            const options = await categoriesCollection.find(query).toArray();
-            res.send(options)
+            const category = await categoriesCollection.find(query).toArray();
+            res.send(category)
         });
+
+        // categories api
+        app.get('/categories/:id', async (req, res) => {
+            const id = req.params.id;
+            let query = {
+                "category_id": id
+            };
+            const cursor = categoriesItemCollection.find(query);
+            const categoryItem = await cursor.toArray();
+            res.send(categoryItem);
+        })
     }
     finally {
 

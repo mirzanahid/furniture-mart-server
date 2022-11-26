@@ -57,6 +57,13 @@ async function run() {
             const result = await usersCollection.insertOne(user)
             res.send(result)
         })
+        // verify user as admin
+        app.get('/users/admin/:email', async (req, res) => {
+           const email = req.params.email;
+           const query={email};
+           const user = await usersCollection.findOne(query);
+           res.send({isAdmin: user?.role === 'admin'});
+        });
 
         // all sellers api
         app.get('/allSellers', async (req, res) => {

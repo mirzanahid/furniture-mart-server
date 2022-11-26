@@ -57,13 +57,14 @@ async function run() {
             const result = await usersCollection.insertOne(user)
             res.send(result)
         })
-        // verify user as admin
-        app.get('/users/admin/:email', async (req, res) => {
+        // verify user role
+        app.get('/users/role/:email', async (req, res) => {
            const email = req.params.email;
            const query={email};
            const user = await usersCollection.findOne(query);
-           res.send({isAdmin: user?.role === 'admin'});
+           res.send({isAdmin: user?.role === 'admin',isBuyer: user?.role === 'buy',isSeller: user?.role === 'sell'});
         });
+
 
         // all sellers api
         app.get('/allSellers', async (req, res) => {

@@ -1,8 +1,7 @@
-//to use this template install express , mongodb , cors , dotenv
-
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000
 
@@ -22,6 +21,7 @@ async function run() {
     try {
         const categoriesCollection = client.db("furnitureMart").collection("category");
         const categoriesItemCollection = client.db("furnitureMart").collection("categories");
+        const usersCollection = client.db("furnitureMart").collection("users");
 
         // categories api 
         app.get('/categories', async (req, res) => {
@@ -29,7 +29,6 @@ async function run() {
             const category = await categoriesCollection.find(query).toArray();
             res.send(category)
         });
-
         // categories api
         app.get('/categories/:id', async (req, res) => {
             const id = req.params.id;
@@ -39,7 +38,14 @@ async function run() {
             const cursor = categoriesItemCollection.find(query);
             const categoryItem = await cursor.toArray();
             res.send(categoryItem);
+        });
+        // user save to db
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user)
+            res.send(result)
         })
+
     }
     finally {
 

@@ -57,6 +57,7 @@ async function run() {
             const result = await usersCollection.insertOne(user)
             res.send(result)
         })
+
         // all sellers api
         app.get('/allSellers', async (req, res) => {
             const query = {
@@ -73,6 +74,14 @@ async function run() {
             const category = await usersCollection.find(query).toArray();
             res.send(category)
         });
+        // user delete by admin
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = usersCollection.deleteOne(query);
+            res.send(result);
+
+        })
     }
     finally {
 

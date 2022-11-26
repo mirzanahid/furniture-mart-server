@@ -65,6 +65,14 @@ async function run() {
             const category = await usersCollection.find(query).toArray();
             res.send(category)
         });
+        // all buyers api
+        app.get('/allBuyers', async (req, res) => {
+            const query = {
+                "role": "buy"
+            };
+            const category = await usersCollection.find(query).toArray();
+            res.send(category)
+        });
     }
     finally {
 

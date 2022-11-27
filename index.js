@@ -59,12 +59,11 @@ async function run() {
         })
         // verify user role
         app.get('/users/role/:email', async (req, res) => {
-           const email = req.params.email;
-           const query={email};
-           const user = await usersCollection.findOne(query);
-           res.send({isAdmin: user?.role === 'admin',isBuyer: user?.role === 'buy',isSeller: user?.role === 'sell'});
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isAdmin: user?.role === 'admin', isBuyer: user?.role === 'buy', isSeller: user?.role === 'sell' });
         });
-
 
         // all sellers api
         app.get('/allSellers', async (req, res) => {
@@ -82,11 +81,35 @@ async function run() {
             const category = await usersCollection.find(query).toArray();
             res.send(category)
         });
+        // add product api
+        app.post('/dashboard/addProduct', async (req, res) => {
+            const product = req.body;
+            const result = await categoriesItemCollection.insertOne(product);
+            res.send(result);
+        })
+        //my product api
+        app.get('/products/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const cursor = categoriesItemCollection.find(query);
+            const categoryItem = await cursor.toArray();
+            res.send(categoryItem);
+        });
+
         // user delete by admin
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = usersCollection.deleteOne(query);
+            res.send(result);
+
+        })
+
+          // product delete by seller
+          app.delete('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = categoriesItemCollection.deleteOne(query);
             res.send(result);
 
         })

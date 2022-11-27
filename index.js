@@ -21,6 +21,7 @@ async function run() {
     try {
         const categoriesCollection = client.db("furnitureMart").collection("category");
         const categoriesItemCollection = client.db("furnitureMart").collection("categories");
+        const bookingsCollection = client.db("furnitureMart").collection("bookings");
         const usersCollection = client.db("furnitureMart").collection("users");
 
         // categories api 
@@ -51,19 +52,62 @@ async function run() {
             res.status(403).send({ accessToken: 'token' })
         });
 
+
+        // =========>booking related apis start<===========
+
+        // booking product
+        app.post('/bookings', async (req, res) => {
+            const product = req.body;
+            const result = await bookingsCollection.insertOne(product)
+            res.send(result)
+        })
+        //get booking product
+
+        app.get('/bookings/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const cursor = bookingsCollection.find(query);
+            const bookingProduct = await cursor.toArray();
+            res.send(bookingProduct);
+        });
+
+        // =========>booking related apis end<===========
+
+
+        // =========>user related apis start<===========
         // user save to db
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollection.insertOne(user)
             res.send(result)
         })
-        // verify user role
-        app.get('/users/role/:email', async (req, res) => {
+        // verify admin role
+        app.get('/user/admin/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email };
             const user = await usersCollection.findOne(query);
-            res.send({ isAdmin: user?.role === 'admin', isBuyer: user?.role === 'buy', isSeller: user?.role === 'sell' });
+            res.send({ isAdmin: user?.role === 'admin' });
         });
+        // verify buyer role
+        app.get('/user/buyer/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isBuyer: user?.role === 'buy' });
+        });
+        // verify seller role
+        app.get('/user/seller/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isSeller: user?.role === 'sell' });
+        });
+        // , ,
+
+        // =========>user related apis end<===========
+
+
+
 
         // all sellers api
         app.get('/allSellers', async (req, res) => {
@@ -73,6 +117,9 @@ async function run() {
             const category = await usersCollection.find(query).toArray();
             res.send(category)
         });
+
+
+
         // all buyers api
         app.get('/allBuyers', async (req, res) => {
             const query = {
@@ -81,6 +128,9 @@ async function run() {
             const category = await usersCollection.find(query).toArray();
             res.send(category)
         });
+
+
+
         // add product api
         app.post('/dashboard/addProduct', async (req, res) => {
             const product = req.body;
@@ -105,8 +155,8 @@ async function run() {
 
         })
 
-          // product delete by seller
-          app.delete('/products/:id', async (req, res) => {
+        // product delete by seller
+        app.delete('/products/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = categoriesItemCollection.deleteOne(query);

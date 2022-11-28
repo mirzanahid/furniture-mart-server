@@ -3,6 +3,7 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const stripe = require("stripe")(process.env.STRIPE_SECTRET_KEY)
 const port = process.env.PORT || 5000
 
 const app = express();
@@ -37,6 +38,8 @@ async function run() {
         const categoriesItemCollection = client.db("furnitureMart").collection("categories");
         const bookingsCollection = client.db("furnitureMart").collection("bookings");
         const usersCollection = client.db("furnitureMart").collection("users");
+        const reportCollection = client.db("furnitureMart").collection("report");
+
 
 
 
@@ -91,6 +94,28 @@ async function run() {
 
         // =========>jwt related apis end<===========
 
+        // =========>stripe related apis start<===========
+
+        app.post('/create-payment-intent', async (req, res) => {
+            const booking = req.body;
+            const price = booking.price;
+            const amount = price * 100;
+            console.log(price, booking)
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ]
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            })
+
+        });
+
+        // =========>stripe related apis end<===========
+
         // =========>category related apis start<===========
 
         // categories api 
@@ -111,6 +136,30 @@ async function run() {
         });
 
         // =========>category related apis end<===========
+        // =========>advertise related apis start<===========
+        app.get('/advertise', async (req, res) => {
+            let query = {
+                "advertise": "1"
+            };
+            const cursor = categoriesItemCollection.find(query);
+            const categoryItem = await cursor.toArray();
+            res.send(categoryItem);
+        });
+
+        app.patch('/advertise/:id', async (req, res) => {
+            const id = req.params.id;
+            const advertise = req.body.advertise;
+            const query = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    "advertise": advertise,
+                }
+            }
+            const result = await categoriesItemCollection.updateOne(query, updatedDoc);
+            res.send(result);
+        });
+        // =========>advertise related apis end<===========
+
         // =========>buyer related apis start<===========
 
         // booking product
@@ -121,7 +170,7 @@ async function run() {
         })
         //get booking product
 
-        app.get('/bookings/:email', verifyJWT,verifyBuyer, async (req, res) => {
+        app.get('/bookings/:email', verifyJWT, verifyBuyer, async (req, res) => {
             const email = req.params.email;
             const query = { email };
             const cursor = bookingsCollection.find(query);
@@ -129,14 +178,54 @@ async function run() {
             res.send(bookingProduct);
         });
 
-        // my order deleted by buyer
-        app.delete('/order/:id', verifyJWT,verifyBuyer, async (req, res) => {
+        //  order deleted by buyer
+        app.delete('/order/:id', verifyJWT, verifyBuyer, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = bookingsCollection.deleteOne(query);
             res.send(result);
 
         })
+
+        app.post('/report', async (req, res) => {
+            const product = req.body;
+            const result = await reportCollection.insertOne(product)
+            res.send(result)
+        })
+
+        // app.PUT('report/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const user = req.body.user;
+        //     const status = req.body.status;
+        //     const query = { _id: ObjectId(id) }
+        //     const updatedDoc = {
+        //         $set: {
+        //             "report.user": user,
+        //             "report.status": status
+        //         }
+        //     }
+        //     const result = await categoriesItemCollection.updateOne(query, updatedDoc);
+        //     res.send(result);
+        // });
+
+
+
+        // get payment 
+        app.delete('/order/:id', verifyJWT, verifyBuyer, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = bookingsCollection.deleteOne(query);
+            res.send(result);
+
+        })
+        app.get('/payment/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const cursor = bookingsCollection.find(query);
+            const paymentItem = await cursor.toArray();
+            res.send(paymentItem);
+        });
+
         // =========>buyer related apis end<===========
 
 
@@ -163,21 +252,7 @@ async function run() {
             const user = await usersCollection.findOne(query);
             res.send({ isAdmin: user?.role === "admin", isBuyer: user?.role === "buy", isSeller: user?.role === "sell" });
         });
-        // verify buyer role
-        // app.get('/user/buyer/:email', async (req, res) => {
-        //     const email = req.params.email;
-        //     const query = { email };
-        //     const user = await usersCollection.findOne(query);
-        //     res.send({ isBuyer: user?.role === "buy" });
-        // });
-        // // verify seller role
-        // app.get('/user/seller/:email', async (req, res) => {
-        //     const email = req.params.email;
-        //     const query = { email };
-        //     const user = await usersCollection.findOne(query);
-        //     res.send({ isSeller: user?.role === "sell" });
-        // });
-        // , ,
+
 
         // =========>user related apis end<===========
 

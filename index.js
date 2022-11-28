@@ -14,7 +14,21 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.vsmf7bv.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send('unauthorized access');
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ meassge: 'forbidden access' })
+        }
+        req.decoded = decoded;
+        next();
+    }
+    )
+}
 
 async function run() {
 
@@ -23,6 +37,61 @@ async function run() {
         const categoriesItemCollection = client.db("furnitureMart").collection("categories");
         const bookingsCollection = client.db("furnitureMart").collection("bookings");
         const usersCollection = client.db("furnitureMart").collection("users");
+
+
+
+        // =========>jwt related apis start<===========
+
+
+        //  verify admin 
+        const verifyAdmin = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next();
+        }
+        //  verify buyer 
+        const verifyBuyer = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'buy') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next();
+        }
+        //  verify seller 
+        const verifySeller = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'sell') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next();
+        }
+
+        // jwt access token
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+                return res.send({ accessToken: token });
+            }
+            res.status(403).send({ accessToken: 'token' })
+        });
+
+        // =========>jwt related apis end<===========
+
+        // =========>category related apis start<===========
 
         // categories api 
         app.get('/categories', async (req, res) => {
@@ -40,30 +109,19 @@ async function run() {
             const categoryItem = await cursor.toArray();
             res.send(categoryItem);
         });
-        // jwt access token
-        app.get('/jwt', async (req, res) => {
-            const email = req.query.email;
-            const query = { email: email };
-            const user = await usersCollection.findOne(query);
-            if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-                return res.send({ accessToken: token });
-            }
-            res.status(403).send({ accessToken: 'token' })
-        });
 
-
-        // =========>booking related apis start<===========
+        // =========>category related apis end<===========
+        // =========>buyer related apis start<===========
 
         // booking product
-        app.post('/bookings', async (req, res) => {
+        app.post('/bookings', verifyJWT, verifyBuyer, async (req, res) => {
             const product = req.body;
             const result = await bookingsCollection.insertOne(product)
             res.send(result)
         })
         //get booking product
 
-        app.get('/bookings/:email', async (req, res) => {
+        app.get('/bookings/:email', verifyJWT,verifyBuyer, async (req, res) => {
             const email = req.params.email;
             const query = { email };
             const cursor = bookingsCollection.find(query);
@@ -71,43 +129,59 @@ async function run() {
             res.send(bookingProduct);
         });
 
-        // =========>booking related apis end<===========
+        // my order deleted by buyer
+        app.delete('/order/:id', verifyJWT,verifyBuyer, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = bookingsCollection.deleteOne(query);
+            res.send(result);
+
+        })
+        // =========>buyer related apis end<===========
+
 
 
         // =========>user related apis start<===========
+
         // user save to db
-        app.post('/users', async (req, res) => {
+        app.put('/users/:email', async (req, res) => {
+            const email = req.params.email
             const user = req.body;
-            const result = await usersCollection.insertOne(user)
+            const filter = { email: email }
+            const options = { upsert: true }
+            const updateDoc = {
+                $set: user
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc, options)
             res.send(result)
         })
+
         // verify admin role
-        app.get('/user/admin/:email', async (req, res) => {
+        app.get('/user/role/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email };
             const user = await usersCollection.findOne(query);
-            res.send({ isAdmin: user?.role === 'admin' });
+            res.send({ isAdmin: user?.role === "admin", isBuyer: user?.role === "buy", isSeller: user?.role === "sell" });
         });
         // verify buyer role
-        app.get('/user/buyer/:email', async (req, res) => {
-            const email = req.params.email;
-            const query = { email };
-            const user = await usersCollection.findOne(query);
-            res.send({ isBuyer: user?.role === 'buy' });
-        });
-        // verify seller role
-        app.get('/user/seller/:email', async (req, res) => {
-            const email = req.params.email;
-            const query = { email };
-            const user = await usersCollection.findOne(query);
-            res.send({ isSeller: user?.role === 'sell' });
-        });
+        // app.get('/user/buyer/:email', async (req, res) => {
+        //     const email = req.params.email;
+        //     const query = { email };
+        //     const user = await usersCollection.findOne(query);
+        //     res.send({ isBuyer: user?.role === "buy" });
+        // });
+        // // verify seller role
+        // app.get('/user/seller/:email', async (req, res) => {
+        //     const email = req.params.email;
+        //     const query = { email };
+        //     const user = await usersCollection.findOne(query);
+        //     res.send({ isSeller: user?.role === "sell" });
+        // });
         // , ,
 
         // =========>user related apis end<===========
 
-
-
+        // =========>admin related apis start<===========
 
         // all sellers api
         app.get('/allSellers', async (req, res) => {
@@ -119,7 +193,6 @@ async function run() {
         });
 
 
-
         // all buyers api
         app.get('/allBuyers', async (req, res) => {
             const query = {
@@ -129,8 +202,17 @@ async function run() {
             res.send(category)
         });
 
+        // user delete by admin
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = usersCollection.deleteOne(query);
+            res.send(result);
 
+        })
+        // =========>admin related apis end<===========
 
+        // =========>seller related apis start<===========
         // add product api
         app.post('/dashboard/addProduct', async (req, res) => {
             const product = req.body;
@@ -146,15 +228,6 @@ async function run() {
             res.send(categoryItem);
         });
 
-        // user delete by admin
-        app.delete('/users/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = usersCollection.deleteOne(query);
-            res.send(result);
-
-        })
-
         // product delete by seller
         app.delete('/products/:id', async (req, res) => {
             const id = req.params.id;
@@ -163,6 +236,8 @@ async function run() {
             res.send(result);
 
         })
+
+        // =========>seller related apis end<===========
     }
     finally {
 

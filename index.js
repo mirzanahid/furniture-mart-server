@@ -307,6 +307,19 @@ async function run() {
             res.send(result);
 
         })
+        app.put('/seller/:email', async (req, res) => {
+            const email = req.params.email
+            const user = req.body;
+            const filter = { email: email }
+            const options = { upsert: true }
+            const updateDoc = {
+                $set: user
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc, options)
+            res.send(result)
+        })
+
+
         // =========>admin related apis end<===========
 
         // =========>seller related apis start<===========
@@ -333,6 +346,13 @@ async function run() {
             res.send(result);
 
         })
+
+        app.get('/user/verity/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isVerify: user?.verify === "true" });
+        });
 
         // =========>seller related apis end<===========
     }

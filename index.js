@@ -39,6 +39,7 @@ async function run() {
         const bookingsCollection = client.db("furnitureMart").collection("bookings");
         const usersCollection = client.db("furnitureMart").collection("users");
         const reportCollection = client.db("furnitureMart").collection("report");
+        const paymentCollection = client.db("furnitureMart").collection("payment");
 
 
 
@@ -100,7 +101,6 @@ async function run() {
             const booking = req.body;
             const price = booking.price;
             const amount = price * 100;
-            console.log(price, booking)
             const paymentIntent = await stripe.paymentIntents.create({
                 currency: 'usd',
                 amount: amount,
@@ -232,7 +232,7 @@ async function run() {
 
         // =========>buyer related apis end<===========
 
-        // get payment 
+
         app.delete('/order/:id', verifyJWT, verifyBuyer, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -240,6 +240,7 @@ async function run() {
             res.send(result);
 
         })
+        // get payment 
         app.get('/payment/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -248,6 +249,35 @@ async function run() {
             res.send(paymentItem);
         });
 
+        app.post('/payment', verifyJWT, async (req, res) => {
+            const payment = req.body;
+            const result = await paymentCollection.insertOne(payment);
+            res.send(result);
+        })
+
+        app.put('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const payment_status = req.body;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: payment_status
+            }
+            const result = await bookingsCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        });
+
+        app.put('/productCategories/:id', async (req, res) => {
+            const id = req.params.id;
+            const status = req.body;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: status
+            }
+            const result = await categoriesItemCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        });
         // =========>buyer related apis end<===========
 
 
@@ -354,6 +384,13 @@ async function run() {
             res.send({ isVerify: user?.verify === "true" });
         });
 
+        app.delete('/user/delete/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const result = await categoriesItemCollection.deleteOne(query);
+            res.send(result);
+
+        })
         // =========>seller related apis end<===========
     }
     finally {

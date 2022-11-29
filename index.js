@@ -186,16 +186,38 @@ async function run() {
             res.send(result);
 
         })
-
+        // =========>buyer related apis start<===========
+        // post report to admin
         app.post('/report', async (req, res) => {
             const product = req.body;
             const result = await reportCollection.insertOne(product)
             res.send(result)
         })
+        // get reports
+        app.get('/report', async (req, res) => {
+            const query = {};
+            const cursor = reportCollection.find(query);
+            const reportProduct = await cursor.toArray();
+            res.send(reportProduct);
+        });
+        // delete report 
+        app.delete('/report/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = reportCollection.deleteOne(query);
+            res.send(result);
 
+        })
+
+        app.delete('/reported/item/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = categoriesItemCollection.deleteOne(query);
+            res.send(result);
+        });
         // app.PUT('report/:id', async (req, res) => {
         //     const id = req.params.id;
-        //     const user = req.body.user;
+        //     const user = req.body.user;git
         //     const status = req.body.status;
         //     const query = { _id: ObjectId(id) }
         //     const updatedDoc = {
@@ -208,7 +230,7 @@ async function run() {
         //     res.send(result);
         // });
 
-
+        // =========>buyer related apis end<===========
 
         // get payment 
         app.delete('/order/:id', verifyJWT, verifyBuyer, async (req, res) => {

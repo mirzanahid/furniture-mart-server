@@ -1,17 +1,22 @@
 [
     {
-        "title": "bedroom",
+        "title": "Bed Room",
         "category_id": 1,
-        "thumbnail_url": "https://images.unsplash.com/photo-1615874959474-d609969a20ed?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8YmVkfGVufDB8MnwwfHw%3D&auto=format&fit=crop&w=500&q=60"
+        "thumbnail_url": "https://i.ibb.co/7gcpcsP/bedroom.jpg"
     },
     {
-        "title": "dining room,",
+        "title": "Dining Room,",
         "category_id": 2,
-        "thumbnail_url": "https://images.unsplash.com/photo-1592133308400-19f5da311e91?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTF8fGJlZHxlbnwwfDJ8MHx8&auto=format&fit=crop&w=500&q=60"
+        "thumbnail_url": "https://i.ibb.co/Z674nbJ/dining-room.jpg"
     },
     {
-        "title": "office furniture,",
+        "title": "Study Room,",
         "category_id": 3,
-        "thumbnail_url": "https://images.unsplash.com/photo-1499916078039-922301b0eb9b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTZ8fGJlZHxlbnwwfDJ8MHx8&auto=format&fit=crop&w=500&q=60"
+        "thumbnail_url": "https://i.ibb.co/NVKnVCQ/study-room.jpg"
+    },
+    {
+        "title": "Kitchen Room,",
+        "category_id": 4,
+        "thumbnail_url": "https://i.ibb.co/5vb2VCx/kitchen.jpg"
     }
 ]

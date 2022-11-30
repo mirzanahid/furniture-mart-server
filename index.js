@@ -195,7 +195,7 @@ async function run() {
             res.send(reportProduct);
         });
         // get reports by email
-        app.get('/report/:email', verifyJWT, verifyBuyer, async (req, res) => {
+        app.get('/myreport/:email', verifyJWT, verifyBuyer, async (req, res) => {
             const email = req.params.email;
             const query = { email };
             const cursor = reportCollection.find(query);

@@ -40,13 +40,7 @@ async function run() {
         const usersCollection = client.db("furnitureMart").collection("users");
         const reportCollection = client.db("furnitureMart").collection("report");
         const paymentCollection = client.db("furnitureMart").collection("payment");
-
-
-
-
         // =========>jwt related apis start<===========
-
-
         //  verify admin 
         const verifyAdmin = async (req, res, next) => {
             const decodedEmail = req.decoded.email;
@@ -146,7 +140,7 @@ async function run() {
             res.send(categoryItem);
         });
 
-        app.patch('/advertise/:id', async (req, res) => {
+        app.patch('/advertise/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const advertise = req.body.advertise;
             const query = { _id: ObjectId(id) }
@@ -200,6 +194,14 @@ async function run() {
             const reportProduct = await cursor.toArray();
             res.send(reportProduct);
         });
+        // get reports by email
+        app.get('/report/:email', verifyJWT, verifyBuyer, async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const cursor = reportCollection.find(query);
+            const reportProduct = await cursor.toArray();
+            res.send(reportProduct);
+        });
         // delete report 
         app.delete('/report/:id', async (req, res) => {
             const id = req.params.id;
@@ -215,20 +217,6 @@ async function run() {
             const result = categoriesItemCollection.deleteOne(query);
             res.send(result);
         });
-        // app.PUT('report/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const user = req.body.user;git
-        //     const status = req.body.status;
-        //     const query = { _id: ObjectId(id) }
-        //     const updatedDoc = {
-        //         $set: {
-        //             "report.user": user,
-        //             "report.status": status
-        //         }
-        //     }
-        //     const result = await categoriesItemCollection.updateOne(query, updatedDoc);
-        //     res.send(result);
-        // });
 
         // =========>buyer related apis end<===========
 
@@ -399,9 +387,6 @@ async function run() {
 
 }
 run().catch(error => console.error(error))
-
-
-
 
 app.get('/', (req, res) => {
     res.send('server is running')

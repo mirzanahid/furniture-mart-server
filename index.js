@@ -195,15 +195,16 @@ async function run() {
             res.send(reportProduct);
         });
         // get reports by email
-        app.get('/myreport/:email', verifyJWT, verifyBuyer, async (req, res) => {
+        app.get('/myReport/:email', verifyJWT, verifyBuyer, async (req, res) => {
             const email = req.params.email;
             const query = { email };
             const cursor = reportCollection.find(query);
             const reportProduct = await cursor.toArray();
             res.send(reportProduct);
+  
         });
         // delete report 
-        app.delete('/report/:id', async (req, res) => {
+        app.delete('/myReport/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = reportCollection.deleteOne(query);

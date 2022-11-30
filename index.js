@@ -194,24 +194,6 @@ async function run() {
             const reportProduct = await cursor.toArray();
             res.send(reportProduct);
         });
-        // get reports by email
-        app.get('/myReport/:email', verifyJWT, verifyBuyer, async (req, res) => {
-            const email = req.params.email;
-            const query = { email };
-            const cursor = reportCollection.find(query);
-            const reportProduct = await cursor.toArray();
-            res.send(reportProduct);
-  
-        });
-        // delete report 
-        app.delete('/myReport/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = reportCollection.deleteOne(query);
-            res.send(result);
-
-        })
-
         app.delete('/reported/item/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -220,7 +202,6 @@ async function run() {
         });
 
         // =========>buyer related apis end<===========
-
 
         app.delete('/order/:id', verifyJWT, verifyBuyer, async (req, res) => {
             const id = req.params.id;
